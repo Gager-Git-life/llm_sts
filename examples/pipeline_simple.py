@@ -11,9 +11,7 @@ class PipelineManager:
         # 初始化队列
         self.audio_input_queue = asyncio.Queue()    # 原始音频输入队列
         self.asr_output_queue = asyncio.Queue()     # ASR结果队列
-        self.llm_input_queue = asyncio.Queue()      # LLM输入队列
         self.llm_output_queue = asyncio.Queue()     # LLM结果队列
-        self.tts_input_queue = asyncio.Queue()      # TTS输入队列
         self.tts_output_queue = asyncio.Queue()     # TTS结果队列
         self.echo_reference_queue = asyncio.Queue()  # 回声参考音频队列
         
@@ -87,7 +85,7 @@ class PipelineManager:
                 text = await self.asr_client.get_message()
                 if text:
                     # 发送新的文本到LLM输入队列
-                    await self.llm_input_queue.put(text)
+                    await self.asr_output_queue.put(text)
         except Exception as e:
             logger.error(f"ASR receiver error: {str(e)}")
 
@@ -95,7 +93,7 @@ class PipelineManager:
         """发送文本到LLM服务器"""
         try:
             while self.running:
-                data = await self.llm_input_queue.get()
+                data = await self.asr_output_queue.get()
      
                 message = json.dumps({
                     "model": "qwen-long",
@@ -113,7 +111,7 @@ class PipelineManager:
                 response = await self.llm_client.get_message()
                 if response:
                     try:
-                        await self.tts_input_queue.put(response)
+                        await self.llm_output_queue.put(response)
                     except json.JSONDecodeError:
                         logger.error("Invalid JSON response from LLM")
         except Exception as e:
@@ -123,10 +121,10 @@ class PipelineManager:
         """发送文本到TTS服务器"""
         try:
             while self.running:
-                result = await self.tts_input_queue.get()
+                result = await self.llm_output_queue.get()
                 async for segment in self.text_segmenter.process_text(result):
                     await self.tts_client.send_message(segment)
-                    await asyncio.sleep(0.05)
+                    await asyncio.sleep(0.001)
                 
         except Exception as e:
             logger.error(f"TTS sender error: {str(e)}")
