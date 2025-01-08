@@ -21,9 +21,6 @@ class PipelineManager:
         self.audio_processor = AudioStreamProcessor()
         self.audio_player = AudioPlayer()
         self.text_segmenter = TextSegmenter()
-
-        self.is_speaking = False
-        self.interrupt = False
         
         # 初始化WebSocket客户端
         self.asr_client = WebSocketClient("ws://localhost:8765")
@@ -89,8 +86,6 @@ class PipelineManager:
             while self.running:
                 text = await self.asr_client.get_message()
                 if text:
-                    self.is_speaking = True
-
                     # 发送新的文本到LLM输入队列
                     await self.llm_input_queue.put(text)
         except Exception as e:
@@ -152,10 +147,6 @@ class PipelineManager:
         try:
             while self.running:
                 audio_data = await self.tts_output_queue.get()
-                if self.is_speaking:
-                    self.audio_player.clean_buffer()
-                    self.is_speaking = False
-                    continue
                 self.audio_player.process_chunk(audio_data)
         except Exception as e:
             logger.error(f"Audio output processor error: {str(e)}")
