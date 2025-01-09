@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+anthropic
+openai
+Pillow
+numpy
+torch >=2.0.0
+opencv-python
+edge_tts
+pydub
+vosk
+pyaudio
