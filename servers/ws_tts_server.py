@@ -30,7 +30,7 @@ class AudioOutputServer(WebSocketServer):
                 if chunk["type"] == "audio":
                     # 直接发送音频数据块
                     await self.send_queues[websocket].put(chunk["data"])
-                    # await asyncio.sleep(0.01)
+                    await asyncio.sleep(0)
 
         except Exception as e:
             logger.error(f"Error processing audio: {str(e)}")

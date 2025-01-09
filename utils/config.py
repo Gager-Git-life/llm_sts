@@ -41,6 +41,5 @@ TTS_CONFIG = {
     "host": "0.0.0.0",
     "port": 8763,
     "voice": "zh-CN-XiaoxiaoNeural",
-    "sample_rate": 44100,
     "channel": 1
 }
