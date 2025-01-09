@@ -1,4 +1,8 @@
+<div align="center">
+
 # LLM-STS 🎯
+
+</div>
 
 一个基于WebSocket和LLM的实时语音对话系统，集成了语音识别(ASR)、大语言模型(LLM)和语音合成(TTS)功能。
 
