@@ -232,7 +232,7 @@ class AudioStream:
                 print("\n录制结束。")
 
 class AudioPlayer:
-    def __init__(self, buffer_size: int = 100, low_watermark: float = 0.01):
+    def __init__(self, buffer_size: int = 200, low_watermark: float = 0.01):
         """
         初始化音频播放器
         
