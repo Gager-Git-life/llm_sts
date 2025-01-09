@@ -10,3 +10,5 @@ edge_tts
 pydub
 vosk
 pyaudio
+webrtcvad
+sounddevice
