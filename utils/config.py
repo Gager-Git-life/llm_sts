@@ -5,7 +5,7 @@
 # LLM配置
 MLLM_CONFIG = {
     "qwen": {
-        "api_key": "sk-822118097f144d3b8492d09901b80d2a",
+        "api_key": "请换成自己的api_key",
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
         "model_name": "qwen-long"
     },
