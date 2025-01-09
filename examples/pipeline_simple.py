@@ -1,10 +1,14 @@
-import asyncio
 from typing import Optional
+import asyncio
+import json
+
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.websocket_core import WebSocketClient
 from core.audio_core import AudioStreamProcessor, AudioPlayer
 from core.text_core import TextSegmenter
 from utils.logger import logger
-import json
+
 
 class PipelineManager:
     def __init__(self):
@@ -13,7 +17,6 @@ class PipelineManager:
         self.asr_output_queue = asyncio.Queue()     # ASR结果队列
         self.llm_output_queue = asyncio.Queue()     # LLM结果队列
         self.tts_output_queue = asyncio.Queue()     # TTS结果队列
-        self.echo_reference_queue = asyncio.Queue()  # 回声参考音频队列
         
         # 初始化处理器
         self.audio_processor = AudioStreamProcessor()
@@ -85,6 +88,7 @@ class PipelineManager:
                 text = await self.asr_client.get_message()
                 if text:
                     # 发送新的文本到LLM输入队列
+                    logger.info(f"ASR received: {text}")
                     await self.asr_output_queue.put(text)
         except Exception as e:
             logger.error(f"ASR receiver error: {str(e)}")
@@ -94,7 +98,6 @@ class PipelineManager:
         try:
             while self.running:
                 data = await self.asr_output_queue.get()
-     
                 message = json.dumps({
                     "model": "qwen-long",
                     "content": data,
@@ -109,6 +112,7 @@ class PipelineManager:
         try:
             while self.running:
                 response = await self.llm_client.get_message()
+                logger.info(f"LLM received: {response}")
                 if response:
                     try:
                         await self.llm_output_queue.put(response)
@@ -136,7 +140,6 @@ class PipelineManager:
                 response = await self.tts_client.get_message()
                 if response and len(response) > 0:
                     await self.tts_output_queue.put(response)
-                    await self.echo_reference_queue.put(response)
         except Exception as e:
             logger.error(f"TTS receiver error: {str(e)}")
 
