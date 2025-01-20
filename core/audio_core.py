@@ -1,17 +1,24 @@
+from vosk import Model, KaldiRecognizer
+from pydub import AudioSegment
 from queue import Queue, Empty
-import threading
+import sounddevice as sd
+from io import BytesIO
 import numpy as np
+import threading
 import webrtcvad
 import pyaudio
 import asyncio
 import torch
-import time
 import queue
-import io
-from pydub import AudioSegment
+import json
+import time
 import wave
-import sounddevice as sd
-from io import BytesIO
+import io
+
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.logger import logger
+from NN import FBank, CAMPPlus
 
 class VADIterator:
     def __init__(self,
@@ -354,7 +361,7 @@ class AudioPlayer:
             self.pyaudio_instance.terminate()
 
 class AudioStreamProcessor:
-    def __init__(self):
+    def __init__(self, enable_sv=False, sv_config=None):
         self.audio_stream = AudioStream(input_type="microphone")
         self.frame_rate = self.audio_stream.RATE
         self.vad = webrtcvad.Vad(3)  # 使用最高的激进程度
@@ -363,6 +370,25 @@ class AudioStreamProcessor:
         # 噪声处理
         self.noise_floor = None
         self.noise_adapt_rate = 0.95
+        
+        # 说话人验证相关
+        self.enable_sv = enable_sv
+        if enable_sv:
+            if sv_config is None:
+                sv_config = {
+                    'model_path': "./models/campplus_cn_common.bin",
+                    'feat_dim': 80,
+                    'embedding_size': 192,
+                    'sample_rate': 16000,
+                    'verification_audio_path': "./test_audios/gager.wav"
+                }
+            self.sv_model = CAMPPlus_SV(
+                model_path=sv_config['model_path'],
+                feat_dim=sv_config['feat_dim'],
+                embedding_size=sv_config['embedding_size'],
+                sample_rate=sv_config['sample_rate'],
+                verification_audio_path=sv_config['verification_audio_path']
+            )
 
     def _update_noise_floor(self, energy):
         """更新环境噪声基准"""
@@ -461,11 +487,169 @@ class AudioStreamProcessor:
                 else:
                     yield data
             await asyncio.sleep(1)
-                    
-    async def process_stream(self):
-        async for data in self.process_stream_by_webrtc():
-            yield data
+                
 
+class Vosk_ASR:
+    def __init__(self, model_path, sample_rate, end_signal):
+        self.init(model_path, sample_rate)
+        self.end_signal = end_signal
+
+    def init(self, model_path, sample_rate):
+        self.init_device()
+        self.load_model(model_path, sample_rate)
+
+    def init_device(self):
+        if torch.cuda.is_available():
+            msg = 'Using gpu for inference.'
+            print(f'[INFO]: {msg}')
+            self.device = torch.device('cuda')
+        else:
+            msg = 'No cuda device is detected. Using cpu.'
+            print(f'[INFO]: {msg}')
+            self.device = torch.device('cpu')
+
+    def load_model(self, model_path, sample_rate):
+        try:
+            asr_model = Model(model_path)
+            self.rec = KaldiRecognizer(asr_model, sample_rate)
+            self.rec.SetWords(True)
+        except Exception as e:
+            logger.error(f"Failed to initialize Vosk model: {str(e)}")
+            raise
+
+    def process_audio(self, audio_data):
+        if isinstance(audio_data, bytes):
+            if self.rec.AcceptWaveform(audio_data):
+                result = json.loads(self.rec.Result())
+                text = result.get("text", "")
+            else:
+                partial = json.loads(self.rec.PartialResult())
+                text = partial.get("partial", "")
+            return False, text
+
+        elif audio_data == self.end_signal:
+            result = json.loads(self.rec.FinalResult())
+            text = result.get("text", "")
+            return True, text
+
+        else:
+            return False, None
+
+    async def process_audio_async(self, audio_data):
+        """异步处理音频数据"""
+        # 将同步处理包装成异步
+        return await asyncio.to_thread(self.process_audio, audio_data)
+
+
+class CAMPPlus_SV:
+    def __init__(self, model_path, feat_dim, embedding_size, sample_rate, verification_audio_path):
+        self.init(model_path, feat_dim, embedding_size, sample_rate, verification_audio_path)
+        self.is_speaking = False
+        self.audio_buffer = []
+        self.threshold = 0.45
+
+    def init(self, model_path, feat_dim, embedding_size, sample_rate, verification_audio_path):
+        self.init_device()
+        self.load_model(model_path, feat_dim, embedding_size)
+        self.feature_extractor = FBank(feat_dim, sample_rate=sample_rate, mean_nor=True)
+        self.embeddings = self.compute_embedding(verification_audio_path)
+        self.similarity = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
+
+    def init_device(self):
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
+
+    def load_model(self, model_path, feat_dim, embedding_size):
+        try:
+            self.model = CAMPPlus(
+                feat_dim=feat_dim,
+                embedding_size=embedding_size,
+            )
+            pretrained_state = torch.load(model_path, weights_only=True, map_location=self.device)
+            self.model.load_state_dict(pretrained_state)
+            self.model.to(self.device)
+            self.model.eval()
+        except Exception as e:
+            logger.error(f"Failed to initialize CAMPPlus_SV model: {str(e)}")
+            raise
+
+
+    def load_wav(self, wav_file, obj_fs=16000):
+        import torchaudio
+
+        wav, fs = torchaudio.load(wav_file)
+        if fs != obj_fs:
+            print(f'[WARNING]: The sample rate of {wav_file} is not {obj_fs}, resample it.')
+            wav, fs = torchaudio.sox_effects.apply_effects_tensor(
+                wav, fs, effects=[['rate', str(obj_fs)]]
+            )
+        if wav.shape[0] > 1:
+            wav = wav[0, :].unsqueeze(0)
+        return wav
+
+    def compute_embedding(self, wav_obj):
+        if isinstance(wav_obj, str):
+            wav = self.load_wav(wav_obj)
+        elif isinstance(wav_obj, bytes):
+            # 创建可写的副本
+            wav_array = np.frombuffer(wav_obj, dtype=np.int16).copy()
+            wav = torch.from_numpy(wav_array).float() / 32768.0
+        else:
+            wav = wav_obj
+        # compute feat
+        feat = self.feature_extractor(wav).unsqueeze(0).to(self.device)
+        # compute embedding
+        with torch.no_grad():
+            embedding = self.model(feat)
+        
+        return embedding.detach().cpu()
+
+    def compute_similarity(self, audio_data):
+        embeddings = self.compute_embedding(audio_data)
+        scores = self.similarity(embeddings, self.embeddings).item()
+        return scores
+
+    def verification(self, audio_data):
+        if isinstance(audio_data, bytes):
+            scores = self.compute_similarity(audio_data)
+            if scores > self.threshold:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def process_audio(self, audio_data):
+        if isinstance(audio_data, bytes):
+            if not self.is_speaking:
+                self.is_speaking = True
+                self.audio_buffer = [audio_data]
+            else:
+                self.audio_buffer.append(audio_data)
+            return False, None
+
+        elif audio_data == "[end]" and self.is_speaking:
+            self.is_speaking = False
+            if self.audio_buffer:
+                audio_data = b''.join(self.audio_buffer)
+                is_target = self.verification(audio_data)
+                score = self.compute_similarity(audio_data)
+                self.audio_buffer = []
+                return is_target, score
+            else:
+                return False, None
+            
+        elif audio_data == "[pass]":
+            return False, None
+        else:
+            return False, None
+
+    async def process_audio_async(self, audio_data):
+        """异步处理音频数据"""
+        # 将同步处理包装成异步
+        return await asyncio.to_thread(self.process_audio, audio_data)
 
 
 async def main():
@@ -479,5 +663,6 @@ async def main():
             print(".", end=" ", flush=True)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(main())
     # asyncio.run(test_system_audio())
+    asyncio.run(speaker_verification_demo())
