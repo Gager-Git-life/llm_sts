@@ -5,7 +5,7 @@
 # LLM配置
 MLLM_CONFIG = {
     "qwen": {
-        "api_key": "请换成自己的api_key",
+        "api_key": "sk-5c669ac69ad2450d9dfcb430caf6233f",
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
         "model_name": "qwen-long"
     },
@@ -26,7 +26,13 @@ ASR_CONFIG = {
     "host": "0.0.0.0",
     "port": 8765,
     "sample_rate": 16000,
-    "model_path": "./vosk-model-cn-0.22"
+    "asr_model_path": "./models/vosk-model-cn-0.22",
+    "end_signal": "[end]",
+
+    "speaker_model_path": "./models/campplus_cn_common.bin",
+    "verification_audio_path": "./test_audios/gager.wav",
+    "feat_dim": 80,
+    "embedding_size": 192
 }
 
 LLM_CONFIG = {
@@ -42,4 +48,16 @@ TTS_CONFIG = {
     "port": 8763,
     "voice": "zh-CN-XiaoxiaoNeural",
     "channel": 1
+}
+
+SEARCH_CONFIG = {
+    "host": "0.0.0.0",
+    "port": 8762,
+    
+    "qa_host": "localhost",
+    "qa_port": 8768,
+    
+    "api_key": "your-api-key",
+    "base_url": "https://your-api-base-url",
+    "model_name": "qwen-long"
 }
