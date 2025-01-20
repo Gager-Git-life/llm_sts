@@ -125,9 +125,9 @@ class LLMChatBase(ABC):
     @pipeable
     def chat_image(
         self, 
-        model: str,
-        input_text: str, 
         input_image: Union[str, Image.Image, np.ndarray, torch.Tensor],
+        input_text: str, 
+        model: str,
         **llm_kwargs
     ) -> Union[str, Generator[str, None, None]]:
         """与模型进行对话，支持图像输入、流式输出和历史上下文选项"""
@@ -150,10 +150,10 @@ class LLMChatBase(ABC):
             }
         ] 
 
-        return self.chat(model, content, None, **llm_kwargs)
+        return self.chat(content, None, model, **llm_kwargs)
 
     @pipeable
-    def chat(self, model: str, input_text: str, input_image: str=None, **llm_kwargs) -> Union[str, Generator[str, None, None]]:
+    def chat(self, input_text: str=None, input_image: str=None, model: str=None, **llm_kwargs) -> Union[str, Generator[str, None, None]]:
         """与模型进行对话,支持流式输出、历史上下文选项和多步骤推理"""
         try:
             if not model:
@@ -324,9 +324,9 @@ class ClaudeChat(LLMChatBase):
     @pipeable
     def chat_image(
         self, 
-        model: str,
-        input_text: str, 
         input_image: Union[str, PIL.Image.Image, np.ndarray, torch.Tensor],
+        input_text: str, 
+        model: str,
         **llm_kwargs
     ) -> Union[str, Generator[str, None, None]]:
         """与模型进行对话，支持图像输入、流式输出和历史上下文选项"""
@@ -351,7 +351,7 @@ class ClaudeChat(LLMChatBase):
         return self.chat(model, content, None, **llm_kwargs)
         
     @pipeable
-    def chat(self, model: str, input_text: str, input_image: str=None, **llm_kwargs) -> Union[str, Generator[str, None, None]]:
+    def chat(self, input_text: str=None, input_image: str=None, model: str=None, **llm_kwargs) -> Union[str, Generator[str, None, None]]:
         """与模型进行对话，支持流式和历史上下文选项"""
         try:
             if not model:
