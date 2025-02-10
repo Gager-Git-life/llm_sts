@@ -59,6 +59,7 @@ pip install -r requirements.txt
 ```
 
 2. 模型下载 📥:
+
    2.1.vosk模型下载：
 
    - [vosk-model-cn-0.22](https://alphacephei.com/vosk/models/vosk-model-cn-0.22.zip)
