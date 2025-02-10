@@ -1,5 +1,4 @@
 <div align="center">
-
 # LLM-STS 🎯
 
 </div>
@@ -21,6 +20,7 @@
 ### ASR 模块 🎤
 - ✅ 实时音频流输入输出
 - ✅ WebRTC VAD 语音活动检测
+- ✅ CAM++ 说话人确认
 - 🚧 AEC 声学回声消除 (开发中)
 - ✅ Vosk 中文语音识别
 - ✅ WebSocket 流式传输
@@ -36,11 +36,18 @@
   - 🚧 Google Gemini (开发中)
 
 ### TTS 模块 🔊
+
 - ✅ Edge TTS 集成
 - ✅ 多音色支持
 - ✅ 实时语音合成
 - ✅ WebSocket 流式传输
 - 💡 更多 TTS 引擎支持 (计划中)
+
+### 系统层级 🏠
+
+- 🚧  Agent功能如：浏览器查询、工具使用（开发中）
+
+- 🚧 实时打断对话（开发中，暂时没有十分优雅的实现，欢迎pr🤤）
 
 
 
@@ -51,10 +58,16 @@
 pip install -r requirements.txt
 ```
 
-2. vosk模型下载 📥:
+2. 模型下载 📥:
+   2.1.vosk模型下载：
+
    - [vosk-model-cn-0.22](https://alphacephei.com/vosk/models/vosk-model-cn-0.22.zip)
    - [vosk-model-small-cn-0.22](https://alphacephei.com/vosk/models/vosk-model-small-cn-0.22.zip)
    - [其它模型](https://alphacephei.com/vosk/models)
+
+   2.2.cam++模型下载：
+
+   - [CAM++说话人确认-中文-通用-200k-Spkrs](https://www.modelscope.cn/models/iic/speech_campplus_sv_zh-cn_16k-common)
 
 3. 配置服务 ⚙️：
    修改 `utils/config.py` 中的配置参数：
@@ -63,12 +76,16 @@ pip install -r requirements.txt
    - `api_key`: 模型服务的API密钥
    - `base_url`: API服务的接口地址
    - `model_name`: 使用的模型版本名称（如：qwen-long）
+   - `stream`: 流式文本输出（必须为True）
+   - `context`: 上下文关联响应（默认为True，不建议修改）
 
    **B. ASR配置参数** 🎤
    - `host`: 服务器监听地址，0.0.0.0表示允许所有IP访问
    - `port`: ASR服务端口号，默认8765
    - `sample_rate`: 音频采样率，Vosk要求16kHz
-   - `model_path`: Vosk中文模型路径，指向下载的模型目录
+   - `asr_model_path`: Vosk中文模型路径，指向下载的模型目录
+   - `speaker_model_path`: CAM++模型路径，指向下载的模型目录
+   - `verification_audio_path`: 说话人语音文件，需要自己单独录制一段存放
 
    **C. TTS配置参数** 🔊
    - `host`: 服务器监听地址
@@ -97,15 +114,22 @@ python main.py
 项目包含以下主要组件：
 
 1. **语音识别服务** (ASR) 👂
+
+   - 采用流式传输音频数据
+
+   - 基于VAD进行语音活动检测
+
    - 基于Vosk实现中文语音识别
-   - 支持实时语音流识别
-   - 支持部分识别结果输出
-   - 采用WebSocket流式传输音频数据
-   - 集成WebRTC VAD进行语音活动检测
+   - 基于CAM++实现说话人确认
+   - 支持实时同步语音识别和说话人识别
    - WebSocket服务器端口：8765
 
 2. **大语言模型服务** (LLM)
-   - 支持多种模型：QWen、Claude、OpenAI
+
+   - 兼容openai格式接口
+
+   - 支持多种模型：QWen、deepseek、gemini等
+   - 支持逻辑推理（自定义prompt）
    - 支持流式输出和上下文对话
    - WebSocket服务器端口：8764
 
@@ -114,23 +138,25 @@ python main.py
    - 支持多种音色
    - WebSocket服务器端口：8763
 
+4. 语音输出模块
+
+   - 在audio_core中实现了AudioPlayer类用于音频输出
+
 ## 核心模块
 
 1. **音频处理模块** (`core/audio_core.py`)
    - 实现音频流采集和处理
    - 支持系统音频和麦克风输入
    - 集成VAD（语音活动检测）
+   - 支持说话人确认，防止无限触发
    - 提供音频流处理和噪声处理功能
-
 2. **文本处理模块** (`core/text_core.py`)
    - 实现文本分段处理
    - 优化语音合成的文本输入
-
 3. **LLM模块** (`core/llm_core.py`)
    - 封装多种大语言模型接口
    - 统一的模型调用接口
    - 支持流式输出处理
-
 4. **WebSocket核心模块** (`core/websocket_core.py`)
    - 提供WebSocket客户端和服务器基类
    - 实现异步消息处理
