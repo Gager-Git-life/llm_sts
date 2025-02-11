@@ -1,225 +1,216 @@
 <div align="center">
-# LLM-STS 🎯
+<h1>LLM-STS 🎯</h1>
 
 </div>
 
-一个基于WebSocket和LLM的实时语音对话系统，集成了语音识别(ASR)、大语言模型(LLM)和语音合成(TTS)功能。
+A real-time voice conversation system based on WebSocket and LLM, integrating speech recognition (ASR), large language model (LLM), and text-to-speech (TTS) functionalities.
 
-## 项目简介 🌟
+## Project Introduction 🌟
 
-本项目的灵感来源于OpenAI的实时语音对话演示，以及科幻电影《Her》中描绘的人工智能语音助手场景。我们希望打造一个流畅的实时语音对话系统，让用户能够通过自然的语音方式与AI进行交互。
+This project is inspired by OpenAI's real-time voice conversation demo and the AI voice assistant scenario depicted in the sci-fi movie "Her". We aim to create a smooth real-time voice conversation system that allows users to interact with AI through natural voice.
 
-项目特点：
-- 🚀 全程实时响应：从语音输入到语音输出的全链路流式处理
-- ⚡ 低延迟：基于WebSocket的流式传输，实现实时语音对话
-- 🔌 模块化设计：支持灵活替换不同的语音识别、大语言模型和语音合成组件
-- 🤖 多模型支持：支持多种主流大语言模型（QWen、Claude、OpenAI等）
+Project Features:
+- 🚀 Real-time response: Full-chain streaming processing from voice input to voice output
+- ⚡ Low latency: Real-time voice conversation based on WebSocket streaming
+- 🔌 Modular design: Supports flexible replacement of different speech recognition, large language model, and text-to-speech components
+- 🤖 Multi-model support: Supports multiple mainstream large language models (QWen, Claude, OpenAI, etc.)
 
 ## TODO List 📋
 
-### ASR 模块 🎤
-- ✅ 实时音频流输入输出
-- ✅ WebRTC VAD 语音活动检测
-- ✅ CAM++ 说话人确认
-- 🚧 AEC 声学回声消除 (开发中)
-- ✅ Vosk 中文语音识别
-- ✅ WebSocket 流式传输
+### ASR Module 🎤
+- ✅ Real-time audio stream input/output
+- ✅ WebRTC VAD voice activity detection
+- ✅ CAM++ speaker verification
+- 🚧 AEC acoustic echo cancellation (in development)
+- ✅ Vosk Chinese speech recognition
+- ✅ WebSocket streaming
 
-### LLM 模块 🤖
-- ✅ 流式响应输出
-- ✅ 上下文对话支持
-- ✅ 多模型推理功能
-- 📦 已支持模型:
-  - ✅ 阿里千问 (Qwen)
+### LLM Module 🤖
+- ✅ Streaming response output
+- ✅ Contextual conversation support
+- ✅ Multi-model inference functionality
+- 📦 Supported models:
+  - ✅ Alibaba Qwen
   - ✅ Anthropic Claude
   - ✅ OpenAI GPT
-  - 🚧 Google Gemini (开发中)
+  - 🚧 Google Gemini (in development)
 
-### TTS 模块 🔊
+### TTS Module 🔊
+- ✅ Edge TTS integration
+- ✅ Multi-voice support
+- ✅ Real-time speech synthesis
+- ✅ WebSocket streaming
+- 💡 More TTS engine support (planned)
 
-- ✅ Edge TTS 集成
-- ✅ 多音色支持
-- ✅ 实时语音合成
-- ✅ WebSocket 流式传输
-- 💡 更多 TTS 引擎支持 (计划中)
+### System Level 🏠
+- 🚧 Agent functionalities like: browser query, tool usage (in development)
+- 🚧 Real-time conversation interruption (in development, no elegant implementation yet, PRs welcome🤤)
 
-### 系统层级 🏠
+## Usage 📝
 
-- 🚧  Agent功能如：浏览器查询、工具使用（开发中）
-
-- 🚧 实时打断对话（开发中，暂时没有十分优雅的实现，欢迎pr🤤）
-
-
-
-## 使用方法 📝
-
-1. 安装依赖：
+1. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. 模型下载 📥:
+2. Model Download 📥:
 
-   2.1.vosk模型下载：
+    2.1 Vosk model download:
 
-   - [vosk-model-cn-0.22](https://alphacephei.com/vosk/models/vosk-model-cn-0.22.zip)
-   - [vosk-model-small-cn-0.22](https://alphacephei.com/vosk/models/vosk-model-small-cn-0.22.zip)
-   - [其它模型](https://alphacephei.com/vosk/models)
+    - [vosk-model-cn-0.22](https://alphacephei.com/vosk/models/vosk-model-cn-0.22.zip)
+    - [vosk-model-small-cn-0.22](https://alphacephei.com/vosk/models/vosk-model-small-cn-0.22.zip)
+    - [Other models](https://alphacephei.com/vosk/models)
 
-   2.2.cam++模型下载：
+    2.2 CAM++ model download:
 
-   - [CAM++说话人确认-中文-通用-200k-Spkrs](https://www.modelscope.cn/models/iic/speech_campplus_sv_zh-cn_16k-common)
+    - [CAM++ Speaker Verification - Chinese - General - 200k Speakers](https://www.modelscope.cn/models/iic/speech_campplus_sv_zh-cn_16k-common)
 
-3. 配置服务 ⚙️：
-   修改 `utils/config.py` 中的配置参数：
+3. Configuration ⚙️：
+    Modify the configuration parameters in `utils/config.py`:
 
-   **A. LLM配置参数** 🤖
-   - `api_key`: 模型服务的API密钥
-   - `base_url`: API服务的接口地址
-   - `model_name`: 使用的模型版本名称（如：qwen-long）
-   - `stream`: 流式文本输出（必须为True）
-   - `context`: 上下文关联响应（默认为True，不建议修改）
+    **A. LLM Configuration Parameters** 🤖
+    - `api_key`: API key for model service
+    - `base_url`: API service endpoint
+    - `model_name`: Model version name (e.g., qwen-long)
+    - `stream`: Streaming text output (must be True)
+    - `context`: Contextual response (default is True, not recommended to modify)
 
-   **B. ASR配置参数** 🎤
-   - `host`: 服务器监听地址，0.0.0.0表示允许所有IP访问
-   - `port`: ASR服务端口号，默认8765
-   - `sample_rate`: 音频采样率，Vosk要求16kHz
-   - `asr_model_path`: Vosk中文模型路径，指向下载的模型目录
-   - `speaker_model_path`: CAM++模型路径，指向下载的模型目录
-   - `verification_audio_path`: 说话人语音文件，需要自己单独录制一段存放
+    **B. ASR Configuration Parameters** 🎤
+    - `host`: Server listening address, 0.0.0.0 allows all IP access
+    - `port`: ASR service port, default 8765
+    - `sample_rate`: Audio sample rate, Vosk requires 16kHz
+    - `asr_model_path`: Vosk Chinese model path, pointing to the downloaded model directory
+    - `speaker_model_path`: CAM++ model path, pointing to the downloaded model directory
+    - `verification_audio_path`: Speaker voice file, need to record and store separately
 
-   **C. TTS配置参数** 🔊
-   - `host`: 服务器监听地址
-   - `port`: TTS服务端口号，默认8763
-   - `voice`: Edge TTS音色选项，如"zh-CN-XiaoxiaoNeural"
-   - `channel`: 音频声道数，1为单声道
+    **C. TTS Configuration Parameters** 🔊
+    - `host`: Server listening address
+    - `port`: TTS service port, default 8763
+    - `voice`: Edge TTS voice option, e.g., "zh-CN-XiaoxiaoNeural"
+    - `channel`: Audio channel number, 1 for mono
 
-
-4. 启动服务 🚀：
+4. Start Services 🚀：
 ```bash
-# 启动ASR服务器 (端口8765)
+# Start ASR server (port 8765)
 python servers/ws_asr_server.py
 
-# 启动LLM服务器 (端口8764)
+# Start LLM server (port 8764)
 python servers/ws_llm_server.py
 
-# 启动TTS服务器 (端口8763)
+# Start TTS server (port 8763)
 python servers/ws_tts_server.py
 
-# 运行主程序
+# Run main program
 python main.py
 ```
 
-## 系统架构 🏗️
+## System Architecture 🏗️
 
-项目包含以下主要组件：
+The project consists of the following main components:
 
-1. **语音识别服务** (ASR) 👂
+1. **Speech Recognition Service** (ASR) 👂
+   - Uses streaming audio data
+   - Based on VAD for voice activity detection
+   - Implements Chinese speech recognition using Vosk
+   - Implements speaker verification using CAM++
+   - Supports real-time synchronized speech recognition and speaker verification
+   - WebSocket server port: 8765
 
-   - 采用流式传输音频数据
+2. **Large Language Model Service** (LLM)
+   - Compatible with OpenAI format interface
+   - Supports multiple models: QWen, deepseek, gemini, etc.
+   - Supports logical reasoning (custom prompt)
+   - Supports streaming output and contextual conversation
+   - WebSocket server port: 8764
 
-   - 基于VAD进行语音活动检测
+3. **Text-to-Speech Service** (TTS)
+   - Implemented using Edge TTS
+   - Supports multiple voices
+   - WebSocket server port: 8763
 
-   - 基于Vosk实现中文语音识别
-   - 基于CAM++实现说话人确认
-   - 支持实时同步语音识别和说话人识别
-   - WebSocket服务器端口：8765
+4. Audio Output Module
+   - Implements AudioPlayer class in audio_core for audio output
 
-2. **大语言模型服务** (LLM)
+## Core Modules
 
-   - 兼容openai格式接口
+1. **Audio Processing Module** (`core/audio_core.py`)
+   - Implements audio stream capture and processing
+   - Supports system audio and microphone input
+   - Integrates VAD (Voice Activity Detection)
+   - Supports speaker verification to prevent infinite triggering
+   - Provides audio stream processing and noise handling
 
-   - 支持多种模型：QWen、deepseek、gemini等
-   - 支持逻辑推理（自定义prompt）
-   - 支持流式输出和上下文对话
-   - WebSocket服务器端口：8764
+2. **Text Processing Module** (`core/text_core.py`)
+   - Implements text segmentation
+   - Optimizes text input for speech synthesis
 
-3. **语音合成服务** (TTS)
-   - 基于Edge TTS实现
-   - 支持多种音色
-   - WebSocket服务器端口：8763
+3. **LLM Module** (`core/llm_core.py`)
+   - Encapsulates multiple large language model interfaces
+   - Unified model calling interface
+   - Supports streaming output processing
 
-4. 语音输出模块
+4. **WebSocket Core Module** (`core/websocket_core.py`)
+   - Provides WebSocket client and server base classes
+   - Implements asynchronous message handling
+   - Manages connection lifecycle
 
-   - 在audio_core中实现了AudioPlayer类用于音频输出
+## Workflow
 
-## 核心模块
+1. **Audio Capture and Processing**
+   - Capture audio input through `AudioStreamProcessor`
+   - Use WebRTC VAD for voice activity detection
+   - Send valid voice segments to ASR server
 
-1. **音频处理模块** (`core/audio_core.py`)
-   - 实现音频流采集和处理
-   - 支持系统音频和麦克风输入
-   - 集成VAD（语音活动检测）
-   - 支持说话人确认，防止无限触发
-   - 提供音频流处理和噪声处理功能
-2. **文本处理模块** (`core/text_core.py`)
-   - 实现文本分段处理
-   - 优化语音合成的文本输入
-3. **LLM模块** (`core/llm_core.py`)
-   - 封装多种大语言模型接口
-   - 统一的模型调用接口
-   - 支持流式输出处理
-4. **WebSocket核心模块** (`core/websocket_core.py`)
-   - 提供WebSocket客户端和服务器基类
-   - 实现异步消息处理
-   - 管理连接生命周期
+2. **Speech Recognition**
+   - ASR server receives audio stream
+   - Use Vosk model for real-time speech recognition
+   - Output recognized text stream
 
-## 工作流程
+3. **Conversation Processing**
+   - LLM server receives recognized text
+   - Call configured language model for processing
+   - Generate conversation response stream
 
-1. **音频采集和处理**
-   - 通过 `AudioStreamProcessor` 采集音频输入
-   - 使用WebRTC VAD进行语音活动检测
-   - 将有效语音片段发送至ASR服务器
+4. **Speech Synthesis**
+   - Segment LLM response text
+   - TTS server receives text and converts to speech
+   - Real-time playback of synthesized speech response
 
-2. **语音识别**
-   - ASR服务器接收音频流
-   - 使用Vosk模型进行实时语音识别
-   - 输出识别文本流
-
-3. **对话处理**
-   - LLM服务器接收识别文本
-   - 调用配置的语言模型进行处理
-   - 生成对话响应流
-
-4. **语音合成**
-   - 对LLM响应文本进行分段处理
-   - TTS服务器接收文本并转换为语音
-   - 实时播放合成的语音响应
-
-## 数据流
+## Data Flow
 
 ```
-音频输入 -> VAD处理 -> ASR服务器 -> 文本识别
-    -> LLM服务器 -> 对话生成
-    -> 文本分段 -> TTS服务器 -> 语音合成 -> 音频输出
+Audio Input -> VAD Processing -> ASR Server -> Text Recognition
+    -> LLM Server -> Conversation Generation
+    -> Text Segmentation -> TTS Server -> Speech Synthesis -> Audio Output
 ```
 
-## 目录结构
+## Directory Structure
 
 ```
 llm_sts_plus/
-├── core/               # 核心功能模块
-├── examples/           # 示例代码
-├── servers/            # 服务器实现
-│   ├── ws_asr_server.py   # ASR服务器
-│   ├── ws_llm_server.py   # LLM服务器
-│   └── ws_tts_server.py   # TTS服务器
-├── utils/              # 工具函数
-├── run_pipeline.py     # 主程序入口
-└── requirements.txt    # 依赖包列表
+├── core/               # Core functional modules
+├── examples/           # Example code
+├── servers/            # Server implementations
+│   ├── ws_asr_server.py   # ASR server
+│   ├── ws_llm_server.py   # LLM server
+│   └── ws_tts_server.py   # TTS server
+├── utils/              # Utility functions
+├── run_pipeline.py     # Main program entry
+└── requirements.txt    # Dependency list
 ```
 
-## 注意事项
+## Notes
 
-1. 使用前请确保已安装所有依赖包
-2. 需要配置相应的API密钥才能使用LLM服务
-3. 语音识别需要下载对应的Vosk模型
-4. 确保网络连接正常，以便访问各种API服务
+1. Make sure all dependencies are installed before use
+2. Need to configure corresponding API keys to use LLM services
+3. Speech recognition requires downloading corresponding Vosk models
+4. Ensure network connection is normal to access various API services
 
-## 示例代码
+## Example Code
 
-可以参考 `examples` 目录下的示例代码来了解各个模块的使用方法。
+Refer to the example code in the `examples` directory to understand how to use each module.
 
-## 技术栈
+## Technology Stack
 
 - Python 3.8+
 - WebSocket
